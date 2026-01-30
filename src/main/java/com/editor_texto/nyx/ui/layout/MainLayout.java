@@ -110,6 +110,16 @@ public class MainLayout {
             }
         });
 
+        // Menu Arquivo > Excluir
+        menuBarTop.getDeleteItem().setOnAction(e -> deleteSelectedFile(fileTreePane));
+
+        // Delete key on TreeView
+        fileTreePane.getTree().setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.DELETE) {
+                deleteSelectedFile(fileTreePane);
+            }
+        });
+
         // Carregar a ultima pasta aberta
         java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userNodeForPackage(MainLayout.class);
         String lastOpenedFolder = prefs.get("lastOpenedFolder", null);
@@ -153,5 +163,58 @@ public class MainLayout {
 
     public EditorPane getEditorPane() {
         return editorPane;
+    }
+
+    private void deleteSelectedFile(FileTreePane fileTreePane) {
+        TreeItem<File> selectedItem = fileTreePane.getTree().getSelectionModel().getSelectedItem();
+        if (selectedItem == null) {
+            return;
+        }
+
+        File fileToDelete = selectedItem.getValue();
+        if (fileToDelete == null || !fileToDelete.exists()) {
+            return;
+        }
+
+        // Confirmation Dialog
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                javafx.scene.control.Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Excluir Arquivo");
+        alert.setHeaderText("Você tem certeza que deseja excluir este arquivo?");
+        alert.setContentText("Esta ação é permanente e não pode ser desfeita: " + fileToDelete.getName());
+
+        java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+            try {
+                if (fileToDelete.delete()) {
+                    // Refresh tree
+                    // We can try to reload the parent of the deleted item
+                    // Or simply reload the whole tree if root hasn't changed
+                    // Ideally we would just remove the item from the tree, but reliability with
+                    // file system interactions suggests reloading or re-reading.
+                    // The watcher might pick it up, but let's force a refresh for better UX.
+
+                    TreeItem<File> rootItem = fileTreePane.getTree().getRoot();
+                    if (rootItem != null && rootItem.getValue() != null) {
+                        fileTreePane.reloadTree(rootItem.getValue());
+                    }
+                } else {
+                    javafx.scene.control.Alert errorAlert = new javafx.scene.control.Alert(
+                            javafx.scene.control.Alert.AlertType.ERROR);
+                    errorAlert.setTitle("Erro");
+                    errorAlert.setHeaderText("Não foi possível excluir o arquivo");
+                    errorAlert.setContentText("Verifique se o arquivo está em uso ou se você tem permissão.");
+                    errorAlert.showAndWait();
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                javafx.scene.control.Alert errorAlert = new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.ERROR);
+                errorAlert.setTitle("Erro");
+                errorAlert.setHeaderText("Erro ao excluir arquivo");
+                errorAlert.setContentText(ex.getMessage());
+                errorAlert.showAndWait();
+            }
+        }
     }
 }

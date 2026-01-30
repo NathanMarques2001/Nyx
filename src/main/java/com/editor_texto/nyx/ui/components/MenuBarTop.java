@@ -12,6 +12,7 @@ public class MenuBarTop {
     private MenuItem openFile;
     private MenuItem openFolder;
     private MenuItem saveFile;
+    private MenuItem deleteFile;
     private MenuItem exit;
     private MenuItem cut;
     private MenuItem copy;
@@ -35,8 +36,9 @@ public class MenuBarTop {
         openFile = new MenuItem("Abrir arquivo");
         openFolder = new MenuItem("Abrir pasta");
         saveFile = new MenuItem("Salvar");
+        deleteFile = new MenuItem("Excluir");
         exit = new MenuItem("Sair");
-        fileMenu.getItems().addAll(newFile, openFile, openFolder, saveFile, exit);
+        fileMenu.getItems().addAll(newFile, openFile, openFolder, saveFile, deleteFile, exit);
         return fileMenu;
     }
 
@@ -85,6 +87,10 @@ public class MenuBarTop {
 
     public MenuItem getSaveFileItem() {
         return saveFile;
+    }
+
+    public MenuItem getDeleteItem() {
+        return deleteFile;
     }
 
     public MenuItem getExitItem() {
