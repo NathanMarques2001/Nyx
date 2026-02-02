@@ -96,6 +96,22 @@ public class EditorPane {
         }
     }
 
+    public String getCurrentCode() {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab instanceof EditorTab) {
+            return ((EditorTab) selectedTab).codeArea.getText();
+        }
+        return "";
+    }
+
+    public File getCurrentFile() {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab instanceof EditorTab) {
+            return ((EditorTab) selectedTab).getFile();
+        }
+        return null;
+    }
+
     /**
      * Tries to close all tabs. Returns true if successful (all closed or user
      * allowed exit),

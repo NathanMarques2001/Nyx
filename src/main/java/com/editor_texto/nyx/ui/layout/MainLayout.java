@@ -4,11 +4,14 @@ import javafx.scene.layout.BorderPane;
 import com.editor_texto.nyx.ui.components.MenuBarTop;
 import java.io.File;
 import javafx.scene.control.TreeItem;
+import com.editor_texto.nyx.ui.layout.ConsolePane;
 
 public class MainLayout {
 
     private BorderPane borderPane;
     private EditorPane editorPane;
+    private ConsolePane consolePane;
+    private com.editor_texto.nyx.ui.controller.CompileController compileController;
 
     public MainLayout() {
         // Inicializa o layout
@@ -156,8 +159,18 @@ public class MainLayout {
             alert.setContentText("Um editor de texto simples feito em JavaFX.");
             alert.showAndWait();
         });
+
         // Adiciona o console
-        borderPane.setBottom(new ConsolePane().getConsole());
+        consolePane = new ConsolePane();
+        borderPane.setBottom(consolePane.getConsole());
+
+        // --- CONTROADORES ---
+        // Inicializa o controlador de compilação
+        compileController = new com.editor_texto.nyx.ui.controller.CompileController(editorPane, consolePane);
+
+        // Menu Executar > Executar
+        menuBarTop.getRunItem().setAccelerator(javafx.scene.input.KeyCombination.keyCombination("F5"));
+        menuBarTop.getRunItem().setOnAction(e -> compileController.onCompile());
     }
 
     // Retorna o layout

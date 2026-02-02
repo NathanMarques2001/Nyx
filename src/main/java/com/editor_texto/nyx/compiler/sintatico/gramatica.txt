@@ -1,0 +1,31 @@
+// Ponto de entrada
+parseProgram -> parseDeclarations parseBlock
+
+// Seção de declarações
+parseDeclarations -> Declaracao parseDeclarations | ε
+Declaracao -> ('int' | 'byte' | 'string' | 'boolean') 'ID' ['=' 'CONSTANTE'] ';' | 'final' 'ID' '=' 'CONSTANTE' ';'
+
+// Estrutura de Bloco e Comandos
+parseBlock -> 'begin' parseCommands 'end'
+parseCommands -> parseCommand parseCommands | ε
+
+// Dispatcher de Comandos
+parseCommand -> parseWrite | parseReadln | parseWhile | parseIf | parseElse | parseBlock | parseAssignment
+
+// Definição dos Comandos
+parseWrite -> ('write' | 'writeln') ',' 'CONSTANTE' { ',' 'CONSTANTE' } ';'
+parseReadln -> 'readln' ',' 'ID' ';'
+parseAssignment -> 'ID' '=' parseExpression ';'
+parseIf -> 'if' parseExpression parseBlock
+parseWhile -> 'while' parseExpression parseBlock
+parseElse -> 'else' parseBlock
+
+// Estrutura de Expressões (sem and/or)
+parseExpression -> parseLogicalExpression
+parseLogicalExpression -> ['not'] parseArithmeticExpression [ Op_Relacional parseArithmeticExpression ]
+parseArithmeticExpression -> parseTerm { ('+' | '-') parseTerm }
+parseTerm -> parseFactor { ('*' | '/') parseFactor }
+parseFactor -> 'ID' | 'CONSTANTE' | '(' parseExpression ')'
+
+// Tokens terminais compostos
+Op_Relacional -> '==' | '<>' | '<' | '>' | '<=' | '>='

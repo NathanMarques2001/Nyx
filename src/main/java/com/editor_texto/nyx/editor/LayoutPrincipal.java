@@ -157,6 +157,14 @@ public class LayoutPrincipal {
             alerta.setContentText("Um editor de texto profissional feito em JavaFX.");
             alerta.showAndWait();
         });
+
+        // --- CONTROLADORES EXTRAS ---
+        // Controlador de Compilação
+        ControladorCompilacao controladorCompilacao = new ControladorCompilacao(painelEditor, painelConsole);
+
+        // Menu Executar > Executar
+        barraDeMenu.obterItemExecutar().setAccelerator(javafx.scene.input.KeyCombination.keyCombination("F5"));
+        barraDeMenu.obterItemExecutar().setOnAction(e -> controladorCompilacao.aoCompilar());
     }
 
     public BorderPane obterPainelPrincipal() {

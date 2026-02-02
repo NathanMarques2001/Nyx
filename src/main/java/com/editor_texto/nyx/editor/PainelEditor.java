@@ -112,6 +112,22 @@ public class PainelEditor {
         }
     }
 
+    public String obterCodigoAtual() {
+        Tab abaSelecionada = painelDeAbas.getSelectionModel().getSelectedItem();
+        if (abaSelecionada instanceof AbaEditor) {
+            return ((AbaEditor) abaSelecionada).areaCodigo.getText();
+        }
+        return "";
+    }
+
+    public File obterArquivoAtual() {
+        Tab abaSelecionada = painelDeAbas.getSelectionModel().getSelectedItem();
+        if (abaSelecionada instanceof AbaEditor) {
+            return ((AbaEditor) abaSelecionada).obterArquivo();
+        }
+        return null;
+    }
+
     /**
      * Tenta fechar todas as abas.
      * 
