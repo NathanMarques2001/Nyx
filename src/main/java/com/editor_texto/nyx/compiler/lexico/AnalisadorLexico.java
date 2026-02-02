@@ -1,163 +1,179 @@
 package com.editor_texto.nyx.compiler.lexico;
 
-import com.editor_texto.nyx.compiler.erros.ExcecaoCompilador;
-import com.editor_texto.nyx.compiler.erros.GerenciadorErros;
-import com.editor_texto.nyx.compiler.modelo.Token;
-import com.editor_texto.nyx.compiler.semantico.TabelaSimbolos;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Realiza a análise léxica do código fonte.
- * Responsável por ler o código caractere por caractere (através de uma linha
- * inteira),
- * identificar padrões (lexemas) e convertê-los em tokens.
+ * Analisador Léxico responsável por converter o código fonte em uma lista de
+ * tokens.
+ * Esta implementação é resiliente a erros e focada em syntax highlighting,
+ * não interrompendo a análise em caso de caracteres inválidos.
  */
 public class AnalisadorLexico {
 
-    private final TabelaSimbolos tabelaSimbolos;
+    private static final Set<String> PALAVRAS_CHAVE = Set.of(
+            "if", "else", "while", "begin", "end", "final", "write", "writeln", "readln");
 
-    // Expressões Regulares para identificar os padrões da linguagem
+    private static final Set<String> TIPOS = Set.of(
+            "int", "byte", "string", "boolean");
 
-    private final Pattern numeros = Pattern.compile("\\d+"); // Encontra sequências de dígitos.
-    private final Pattern hexadecimais = Pattern.compile("0h[a-zA-Z0-9]*"); // Encontra hexadecimais no formato 0hHH.
-    private final Pattern identificadores = Pattern.compile("[a-zA-Z_]\\w*"); // Encontra identificadores (começa com
-                                                                              // letra ou _, seguido por letras, dígitos
-                                                                              // ou _).
-    private final Pattern booleano = Pattern.compile("true|false", Pattern.CASE_INSENSITIVE); // Encontra "true" ou
-                                                                                              // "false".
-    private final Pattern operadores = Pattern.compile("==|<>|<=|>=|<|>|[+\\-*/=]"); // Encontra operadores relacionais
-                                                                                     // e aritméticos.
-    private final Pattern delimitadores = Pattern.compile("[,;()]"); // Encontra delimitadores.
-    private final Pattern comentarios = Pattern.compile("/\\*(.|\\R)*?\\*/|\\{[^\\}]*\\}"); // Encontra comentários de
-                                                                                            // bloco (/*...*/ ou {...}).
-    private final Pattern strings = Pattern.compile("\"([^\"\\\\\\r\\n]|\\\\.)*\""); // Encontra literais string entre
-                                                                                     // aspas.
-    private final Pattern espacosEmBranco = Pattern.compile("\\s+"); // Encontra espaços em branco.
+    // Padrões Regex para tokenização
+    private static final Pattern ESPACO_EM_BRANCO = Pattern.compile("\\s+");
+    // Comentários de bloco e linha (adaptado para { } e /* */)
+    private static final Pattern COMENTARIO = Pattern.compile("/\\*(.|[\\r\\n])*?\\*/|\\{[^}]*\\}");
+    private static final Pattern STRING = Pattern.compile("\"([^\"\\\\]|\\\\.)*\"");
+    private static final Pattern HEXADECIMAL = Pattern.compile("0h[a-zA-Z0-9]*");
+    private static final Pattern NUMERO = Pattern.compile("\\d+");
+    private static final Pattern BOOLEANO = Pattern.compile("true|false", Pattern.CASE_INSENSITIVE);
+    private static final Pattern IDENTIFICADOR = Pattern.compile("[a-zA-Z_]\\w*");
+    private static final Pattern OPERADOR = Pattern.compile("==|<>|<=|>=|<|>|[+\\-*/=]|and|or|not",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern DELIMITADOR = Pattern.compile("[,;()]");
 
-    public AnalisadorLexico(TabelaSimbolos tabelaSimbolos) {
-        this.tabelaSimbolos = tabelaSimbolos;
-    }
+    /**
+     * Realiza a análise léxica (scanner) do texto fornecido.
+     *
+     * @param texto O código fonte a ser analisado.
+     * @return Uma lista de tokens identificados.
+     */
+    public List<Token> analisar(String texto) {
+        List<Token> tokens = new ArrayList<>();
+        int deslocamento = 0;
+        String textoRestante = texto;
 
-    // Analisa uma única linha de código, transformando-a em tokens.
-    public void analisar(String codigo, int numeroLinha) throws ExcecaoCompilador {
-        int numeroColuna = 1;
-        codigo = codigo.stripLeading();
-
-        while (!codigo.isEmpty()) {
-            Matcher matcher = null;
+        while (!textoRestante.isEmpty()) {
+            Matcher match;
             boolean encontrou = false;
-            int tamanhoConsumido = 0;
+            int tamanho = 0;
 
-            // Ignorar espaços e comentários
-            matcher = ignorarLexema(codigo);
-            if (matcher != null && matcher.lookingAt()) {
-                tamanhoConsumido = matcher.end();
+            // 1. Espaços em Branco
+            match = ESPACO_EM_BRANCO.matcher(textoRestante);
+            if (match.lookingAt()) {
+                tamanho = match.end();
+                tokens.add(new Token(TipoToken.ESPACO_EM_BRANCO, match.group(), deslocamento, tamanho));
                 encontrou = true;
-            } else if (codigo.startsWith("\"")) {
-                Matcher matcherString = strings.matcher(codigo);
-                if (matcherString.lookingAt()) {
-                    String lexema = matcherString.group();
+            }
 
-                    if (lexema.length() > 255) {
-                        GerenciadorErros.erroLexicoStringMuitoLonga(numeroLinha, numeroColuna);
-                    }
-
-                    tabelaSimbolos.adicionarToken(new Token(lexema, "const", "string", numeroLinha, numeroColuna));
-                    tamanhoConsumido = matcherString.end();
+            // 2. Comentários (Prioridade Alta)
+            if (!encontrou) {
+                match = COMENTARIO.matcher(textoRestante);
+                if (match.lookingAt()) {
+                    tamanho = match.end();
+                    tokens.add(new Token(TipoToken.COMENTARIO, match.group(), deslocamento, tamanho));
                     encontrou = true;
-                } else {
-                    GerenciadorErros.erroLexicoQuebraDeLinha(numeroLinha, numeroColuna);
                 }
-            } else if ((matcher = booleano.matcher(codigo)).lookingAt()) {
-                tabelaSimbolos.adicionarToken(
-                        new Token(resolverBoolean(matcher.group()), "const", "boolean", numeroLinha, numeroColuna));
-                tamanhoConsumido = matcher.end();
-                encontrou = true;
-            } else if ((matcher = hexadecimais.matcher(codigo)).lookingAt()) {
-                String lexemaHex = matcher.group();
-                String valorHex = lexemaHex.substring(2);
-                if (!valorHex.matches("[a-fA-F0-9]{1,2}")) {
-                    GerenciadorErros.erroLexicoByteHexInvalido(lexemaHex, numeroLinha, numeroColuna);
-                }
-                tabelaSimbolos.adicionarToken(new Token(lexemaHex, "const", "byte", numeroLinha, numeroColuna));
-                tamanhoConsumido = matcher.end();
-                encontrou = true;
-            } else if ((matcher = numeros.matcher(codigo)).lookingAt()) {
-                String lexemaInt = matcher.group();
-                if (lexemaInt.length() > 6) { // Verificação rápida de overflow antes de parse
-                    GerenciadorErros.erroLexicoIntForaDoIntervalo(lexemaInt, numeroLinha, numeroColuna);
-                }
-                try {
-                    int valor = Integer.parseInt(lexemaInt);
-                    if (valor < -32768 || valor > 32767) {
-                        GerenciadorErros.erroLexicoIntForaDoIntervalo(lexemaInt, numeroLinha, numeroColuna);
+            }
+
+            // 3. Strings
+            if (!encontrou) {
+                if (textoRestante.startsWith("\"")) {
+                    match = STRING.matcher(textoRestante);
+                    if (match.lookingAt()) {
+                        tamanho = match.end();
+                        tokens.add(new Token(TipoToken.STRING, match.group(), deslocamento, tamanho));
+                        encontrou = true;
+                    } else {
+                        // String não fechada ou erro. Tratar como ERRO até o final da linha ou próxima
+                        // aspa.
+                        int proximaAspa = textoRestante.indexOf('\"', 1);
+                        int proximaLinha = textoRestante.indexOf('\n');
+                        int fim = (proximaAspa != -1) ? proximaAspa + 1
+                                : (proximaLinha != -1 ? proximaLinha : textoRestante.length());
+                        tamanho = fim;
+                        tokens.add(
+                                new Token(TipoToken.ERRO, textoRestante.substring(0, tamanho), deslocamento, tamanho));
+                        encontrou = true;
                     }
-                } catch (NumberFormatException e) {
-                    GerenciadorErros.erroLexicoIntForaDoIntervalo(lexemaInt, numeroLinha, numeroColuna);
                 }
-                tabelaSimbolos.adicionarToken(new Token(lexemaInt, "const", "int", numeroLinha, numeroColuna));
-                tamanhoConsumido = matcher.end();
-                encontrou = true;
-            } else if ((matcher = matchReservadaOuID(codigo)) != null && matcher.lookingAt()) {
-                String lexema = matcher.group();
-                String lexemaLower = lexema.toLowerCase();
-
-                if (lexemaLower.length() > 255) {
-                    GerenciadorErros.erroLexicoIdentificadorMuitoLongo(lexema, numeroLinha, numeroColuna);
-                }
-
-                String tipo = tabelaSimbolos.isPalavraReservada(lexemaLower) ? "reserved_word" : "id";
-                tabelaSimbolos.adicionarToken(new Token(lexema, tipo, "null", numeroLinha, numeroColuna));
-                tamanhoConsumido = matcher.end();
-                encontrou = true;
-            } else {
-                GerenciadorErros.erroLexicoSimboloInvalido(codigo.charAt(0), numeroLinha, numeroColuna);
             }
 
-            if (encontrou) {
-                numeroColuna += tamanhoConsumido;
-                codigo = codigo.substring(tamanhoConsumido).stripLeading();
+            // 4. Hexadecimal
+            if (!encontrou) {
+                match = HEXADECIMAL.matcher(textoRestante);
+                if (match.lookingAt()) {
+                    tamanho = match.end();
+                    tokens.add(new Token(TipoToken.HEXADECIMAL, match.group(), deslocamento, tamanho));
+                    encontrou = true;
+                }
             }
+
+            // 5. Booleano
+            if (!encontrou) {
+                match = BOOLEANO.matcher(textoRestante);
+                if (match.lookingAt()) {
+                    tamanho = match.end();
+                    tokens.add(new Token(TipoToken.BOOLEANO, match.group(), deslocamento, tamanho));
+                    encontrou = true;
+                }
+            }
+
+            // 6. Identificador / Palavra-Chave / Tipo
+            if (!encontrou) {
+                match = IDENTIFICADOR.matcher(textoRestante);
+                if (match.lookingAt()) {
+                    tamanho = match.end();
+                    String palavra = match.group();
+                    TipoToken tipo = TipoToken.IDENTIFICADOR;
+
+                    if (PALAVRAS_CHAVE.contains(palavra))
+                        tipo = TipoToken.PALAVRA_CHAVE;
+                    else if (TIPOS.contains(palavra))
+                        tipo = TipoToken.TIPO;
+                    else if (palavra.equalsIgnoreCase("and") || palavra.equalsIgnoreCase("or")
+                            || palavra.equalsIgnoreCase("not")) {
+                        tipo = TipoToken.OPERADOR;
+                    }
+
+                    tokens.add(new Token(tipo, palavra, deslocamento, tamanho));
+                    encontrou = true;
+                }
+            }
+
+            // 7. Números
+            if (!encontrou) {
+                match = NUMERO.matcher(textoRestante);
+                if (match.lookingAt()) {
+                    tamanho = match.end();
+                    tokens.add(new Token(TipoToken.NUMERO, match.group(), deslocamento, tamanho));
+                    encontrou = true;
+                }
+            }
+
+            // 8. Operadores
+            if (!encontrou) {
+                match = OPERADOR.matcher(textoRestante);
+                if (match.lookingAt()) {
+                    tamanho = match.end();
+                    tokens.add(new Token(TipoToken.OPERADOR, match.group(), deslocamento, tamanho));
+                    encontrou = true;
+                }
+            }
+
+            // 9. Delimitadores
+            if (!encontrou) {
+                match = DELIMITADOR.matcher(textoRestante);
+                if (match.lookingAt()) {
+                    tamanho = match.end();
+                    tokens.add(new Token(TipoToken.DELIMITADOR, match.group(), deslocamento, tamanho));
+                    encontrou = true;
+                }
+            }
+
+            // 10. Desconhecido / Erro
+            if (!encontrou) {
+                tamanho = 1;
+                tokens.add(new Token(TipoToken.ERRO, textoRestante.substring(0, 1), deslocamento, tamanho));
+                encontrou = true;
+            }
+
+            // Avançar
+            deslocamento += tamanho;
+            textoRestante = textoRestante.substring(tamanho);
         }
-    }
 
-    // Tenta encontrar correspondência com padrões que devem ser ignorados (espaços
-    // e comentários).
-    private Matcher ignorarLexema(String codigo) {
-        Matcher matcher = espacosEmBranco.matcher(codigo);
-        if (matcher.lookingAt()) {
-            return matcher;
-        }
-        matcher = comentarios.matcher(codigo);
-        if (matcher.lookingAt()) {
-            return matcher;
-        }
-        return null;
-    }
-
-    // Tenta encontrar correspondência com identificadores, operadores ou
-    // delimitadores.
-    private Matcher matchReservadaOuID(String codigo) {
-        Matcher matcher = identificadores.matcher(codigo);
-        if (matcher.lookingAt())
-            return matcher;
-
-        matcher = operadores.matcher(codigo);
-        if (matcher.lookingAt())
-            return matcher;
-
-        matcher = delimitadores.matcher(codigo);
-        if (matcher.lookingAt())
-            return matcher;
-
-        return null;
-    }
-
-    // Converte os literais "true" e "false" para seus equivalentes hexadecimais,
-    // conforme a especificação.
-    private String resolverBoolean(String codigo) {
-        return codigo.equalsIgnoreCase("true") ? "Fh" : "0h";
+        return tokens;
     }
 }

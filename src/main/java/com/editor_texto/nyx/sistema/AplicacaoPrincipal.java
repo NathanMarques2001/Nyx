@@ -1,6 +1,6 @@
 package com.editor_texto.nyx.sistema;
 
-import com.editor_texto.nyx.editor.LayoutPrincipal;
+import com.editor_texto.nyx.ui.LayoutPrincipal;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -13,7 +13,20 @@ public class AplicacaoPrincipal extends Application {
 
     @Override
     public void start(Stage palco) {
+        // Configura o tratador de erros global para a Thread JavaFX
+        Thread.currentThread().setUncaughtExceptionHandler(new TratadorErrosGlobal());
+        // Configura para outras threads que possam ser criadas
+        Thread.setDefaultUncaughtExceptionHandler(new TratadorErrosGlobal());
+
         palco.setTitle("Nyx Editor");
+        try {
+            java.io.InputStream iconStream = getClass().getResourceAsStream("/icons/icon.png");
+            if (iconStream != null) {
+                palco.getIcons().add(new javafx.scene.image.Image(iconStream));
+            }
+        } catch (Exception ex) {
+            System.err.println("Não foi possível carregar o ícone: " + ex.getMessage());
+        }
 
         // Cria a cena e define o layout
         LayoutPrincipal layoutPrincipal = new LayoutPrincipal();
@@ -27,6 +40,8 @@ public class AplicacaoPrincipal extends Application {
         palco.setOnCloseRequest(e -> {
             if (!layoutPrincipal.obterPainelEditor().confirmarFechamento()) {
                 e.consume(); // Cancela o fechamento se o usuário cancelar
+            } else {
+                layoutPrincipal.salvarPreferencias();
             }
         });
 

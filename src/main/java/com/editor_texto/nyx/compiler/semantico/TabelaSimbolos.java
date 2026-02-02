@@ -27,6 +27,10 @@ public class TabelaSimbolos {
         this.tabela = new ArrayList<>();
     }
 
+    public void limpar() {
+        this.tabela.clear();
+    }
+
     public Token tokenAtual(int index) {
         return this.tabela.get(index);
     }

@@ -1,7 +1,7 @@
 package com.editor_texto.nyx.compiler.erros;
 
-import com.editor_texto.nyx.compiler.api.ErroCompilacao;
-import com.editor_texto.nyx.compiler.api.TipoErro;
+import com.editor_texto.nyx.compiler.ErroCompilacao;
+import com.editor_texto.nyx.compiler.TipoErro;
 
 /**
  * Exceção customizada para representar qualquer erro encontrado durante o
