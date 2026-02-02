@@ -1,0 +1,49 @@
+/* Light Theme - Default JavaFX Modena overrides if needed, essentially resetting to standards */
+.root {
+    -fx-base: #ececec;
+    -fx-control-inner-background: #ffffff;
+    -fx-background: #f4f4f4;
+    -fx-accent: #0096C9;
+    -fx-focus-color: #039ED3;
+    -fx-faint-focus-color: #039ED322;
+    -fx-text-background-color: black;
+}
+
+.menu-bar {
+    -fx-background-color: #f4f4f4;
+}
+
+.tree-view {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: black;
+}
+
+.tree-cell {
+    -fx-text-fill: black;
+}
+
+.tree-cell:filled:selected:focused,
+.tree-cell:filled:selected {
+    -fx-background-color: #cce8f6;
+    -fx-text-fill: black;
+}
+
+/* Syntax Highlighting */
+.keyword {
+    -fx-fill: purple;
+    -fx-font-weight: bold;
+}
+
+.string {
+    -fx-fill: green;
+}
+
+.comment {
+    -fx-fill: gray;
+    -fx-font-style: italic;
+}
+
+.lineno {
+    -fx-font-family: monospace;
+    -fx-padding: 0 5 0 5;
+}

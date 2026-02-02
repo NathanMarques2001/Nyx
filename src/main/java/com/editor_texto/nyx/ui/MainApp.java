@@ -17,6 +17,9 @@ public class MainApp extends Application {
         Scene scene = new Scene(mainLayout.getBorderPane());
         stage.setScene(scene);
 
+        // Apply theme after scene is set
+        mainLayout.applyCurrentTheme();
+
         // Handle window close request
         stage.setOnCloseRequest(e -> {
             if (!mainLayout.getEditorPane().confirmClose()) {

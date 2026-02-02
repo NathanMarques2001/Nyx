@@ -130,6 +130,10 @@ public class MainLayout {
             }
         }
 
+        // Menu Visualizar > Tema
+        menuBarTop.getLightThemeItem().setOnAction(e -> setTheme("Light"));
+        menuBarTop.getDarkThemeItem().setOnAction(e -> setTheme("Dark"));
+
         // Menu Arquivo > Sair
         menuBarTop.getExitItem().setOnAction(e -> {
             // Check for unsaved changes before exiting
@@ -163,6 +167,36 @@ public class MainLayout {
 
     public EditorPane getEditorPane() {
         return editorPane;
+    }
+
+    public void applyCurrentTheme() {
+        java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userNodeForPackage(MainLayout.class);
+        String savedTheme = prefs.get("appTheme", "Light");
+        applyTheme(savedTheme);
+    }
+
+    private void setTheme(String theme) {
+        java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userNodeForPackage(MainLayout.class);
+        prefs.put("appTheme", theme);
+        applyTheme(theme);
+    }
+
+    private void applyTheme(String theme) {
+        borderPane.getScene().getStylesheets().clear();
+        String cssPath = "";
+        if ("Dark".equalsIgnoreCase(theme)) {
+            cssPath = "/styles/dark.css";
+        } else {
+            cssPath = "/styles/light.css";
+        }
+
+        // Load the CSS
+        java.net.URL cssUrl = getClass().getResource(cssPath);
+        if (cssUrl != null) {
+            borderPane.getScene().getStylesheets().add(cssUrl.toExternalForm());
+        } else {
+            System.err.println("Could not find style sheet: " + cssPath);
+        }
     }
 
     private void deleteSelectedFile(FileTreePane fileTreePane) {

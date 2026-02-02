@@ -21,16 +21,96 @@ public class FileTreePane {
     public FileTreePane() {
         treeView = new TreeView<>();
         // Configura como os itens sao exibidos (apenas o nome do arquivo/pasta)
-        treeView.setCellFactory(tv -> new javafx.scene.control.TreeCell<File>() {
-            @Override
-            protected void updateItem(File item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item.getName());
+        // Configura como os itens sao exibidos e Drag&Drop
+        treeView.setCellFactory(tv -> {
+            javafx.scene.control.TreeCell<File> cell = new javafx.scene.control.TreeCell<File>() {
+                @Override
+                protected void updateItem(File item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setGraphic(null);
+                    } else {
+                        setText(item.getName());
+                    }
                 }
-            }
+            };
+
+            // Drag Detected (Source)
+            cell.setOnDragDetected(event -> {
+                if (cell.getItem() == null)
+                    return;
+
+                javafx.scene.input.Dragboard db = cell.startDragAndDrop(javafx.scene.input.TransferMode.MOVE);
+                javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+                // We put the file path as potential list of files
+                java.util.List<File> files = new java.util.ArrayList<>();
+                files.add(cell.getItem());
+                content.putFiles(files);
+                db.setContent(content);
+                event.consume();
+            });
+
+            // Drag Over (Target)
+            cell.setOnDragOver(event -> {
+                if (event.getGestureSource() != cell &&
+                        event.getDragboard().hasFiles()) {
+
+                    // Only allow drop on directories
+                    File targetFile = cell.getItem();
+                    // If target is null (empty space), we might consider dropping into root,
+                    // but for now let's strict to dropping onto a folder.
+                    // Or if dropping onto a file, maybe move to that file's parent?
+                    // Standard behavior: target must be directory to move INTO it.
+
+                    if (targetFile != null && targetFile.isDirectory()) {
+                        event.acceptTransferModes(javafx.scene.input.TransferMode.MOVE);
+                    }
+                }
+                event.consume();
+            });
+
+            // Drag Dropped (Target)
+            cell.setOnDragDropped(event -> {
+                javafx.scene.input.Dragboard db = event.getDragboard();
+                boolean success = false;
+                if (db.hasFiles()) {
+                    File sourceFile = db.getFiles().get(0);
+                    File targetDir = cell.getItem();
+
+                    if (targetDir != null && targetDir.isDirectory() && sourceFile != null) {
+                        try {
+                            java.nio.file.Path sourcePath = sourceFile.toPath();
+                            java.nio.file.Path targetPath = targetDir.toPath().resolve(sourceFile.getName());
+
+                            // Prevent moving into itself or overwrite without confirmation (simple move)
+                            if (!sourcePath.equals(targetPath)) {
+                                java.nio.file.Files.move(sourcePath, targetPath,
+                                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                success = true;
+
+                                // Refresh logic:
+                                // Ideally we refresh both source parent and destination parent (targetDir)
+                                // Since we rely on watcher, it might catch it.
+                                // But let's trigger reload on the current root for consistency if watcher is
+                                // slow.
+                                // Or better, just let the watcher handle it as implemented in startWatcher().
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                                    javafx.scene.control.Alert.AlertType.ERROR);
+                            alert.setTitle("Erro ao mover arquivo");
+                            alert.setContentText(e.getMessage());
+                            alert.showAndWait();
+                        }
+                    }
+                }
+                event.setDropCompleted(success);
+                event.consume();
+            });
+
+            return cell;
         });
 
         String currentDir = System.getProperty("user.dir");

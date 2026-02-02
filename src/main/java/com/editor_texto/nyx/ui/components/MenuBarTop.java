@@ -3,6 +3,8 @@ package com.editor_texto.nyx.ui.components;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.ToggleGroup;
 
 public class MenuBarTop {
     private MenuBar menuBar;
@@ -17,7 +19,13 @@ public class MenuBarTop {
     private MenuItem cut;
     private MenuItem copy;
     private MenuItem paste;
-    private MenuItem theme;
+
+    // Theme references
+    private Menu themeMenu;
+    private RadioMenuItem lightTheme;
+    private RadioMenuItem darkTheme;
+    private ToggleGroup themeGroup;
+
     private MenuItem run;
     private MenuItem about;
 
@@ -53,8 +61,19 @@ public class MenuBarTop {
 
     private final Menu viewMenu() {
         Menu viewMenu = new Menu("Visualizar");
-        theme = new MenuItem("Tema");
-        viewMenu.getItems().add(theme);
+
+        themeMenu = new Menu("Tema");
+        themeGroup = new ToggleGroup();
+
+        lightTheme = new RadioMenuItem("Light");
+        lightTheme.setToggleGroup(themeGroup);
+
+        darkTheme = new RadioMenuItem("Dark");
+        darkTheme.setToggleGroup(themeGroup);
+
+        themeMenu.getItems().addAll(lightTheme, darkTheme);
+
+        viewMenu.getItems().add(themeMenu);
         return viewMenu;
     }
 
@@ -109,8 +128,12 @@ public class MenuBarTop {
         return paste;
     }
 
-    public MenuItem getThemeItem() {
-        return theme;
+    public RadioMenuItem getLightThemeItem() {
+        return lightTheme;
+    }
+
+    public RadioMenuItem getDarkThemeItem() {
+        return darkTheme;
     }
 
     public MenuItem getRunItem() {

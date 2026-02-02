@@ -1,0 +1,97 @@
+/* Dark Theme - Gray Tones */
+.root {
+    -fx-base: #2b2b2b;
+    -fx-control-inner-background: #2b2b2b;
+    -fx-background: #2b2b2b;
+    -fx-accent: #505050;
+    -fx-focus-color: #707070;
+    -fx-faint-focus-color: transparent;
+    -fx-text-background-color: #e0e0e0;
+    /* Default text color for controls */
+}
+
+/* Backgrounds for specific components to ensure gray look */
+.menu-bar {
+    -fx-background-color: #3c3c3c;
+}
+
+.tree-view {
+    -fx-background-color: #2b2b2b;
+    -fx-text-fill: #e0e0e0;
+}
+
+.tree-cell {
+    -fx-text-fill: #e0e0e0;
+    -fx-background-color: transparent;
+}
+
+.tree-cell:filled:selected:focused,
+.tree-cell:filled:selected {
+    -fx-background-color: #4c4c4c;
+    -fx-text-fill: white;
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: #3c3c3c;
+}
+
+/* RichTextFX CodeArea Styling */
+.styled-text-area {
+    -fx-background-color: #2b2b2b;
+}
+
+/* Text Content - standard text (variables, etc) not pure white to distinguish, or just ensure strings override */
+.styled-text-area .text {
+    -fx-fill: #dcdcdc;
+    /* Gainsboro - slightly off-white */
+    -fx-font-family: monospace;
+}
+
+/* Caret/Cursor - Explicitly white */
+.styled-text-area .caret {
+    -fx-stroke: white;
+}
+
+/* Line Numbers - explicitly black numbers, visible (so implies light background) */
+.lineno {
+    -fx-font-family: monospace;
+    -fx-fill: black;
+    -fx-background-color: #a0a0a0;
+    /* Light gray gutter to make black numbers visible */
+    -fx-padding: 0 5 0 5;
+    /* Add some padding */
+}
+
+/* Syntax Highlighting - Increased specificity to ensure override over .styled-text-area .text */
+.styled-text-area .keyword {
+    -fx-fill: #ffa726;
+    /* Orange/Gold for tags */
+    -fx-font-weight: bold;
+}
+
+.styled-text-area .string {
+    -fx-fill: #66bb6a;
+    /* Green for text letters */
+}
+
+.styled-text-area .comment {
+    -fx-fill: #808080;
+    -fx-font-style: italic;
+}
+
+.styled-text-area .paren,
+.styled-text-area .brace,
+.styled-text-area .bracket,
+.styled-text-area .semicolon {
+    -fx-fill: #a0a0a0;
+}
+
+.scroll-bar:horizontal,
+.scroll-bar:vertical {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:horizontal .thumb,
+.scroll-bar:vertical .thumb {
+    -fx-background-color: #555555;
+}

@@ -146,7 +146,18 @@ public class EditorPane {
 
             codeArea = new CodeArea();
             codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea));
-            codeArea.replaceText(content);
+
+            // Apply highlighting if .lc file
+            if (file != null && file.getName().toLowerCase().endsWith(".lc")) {
+                codeArea.textProperty().addListener((obs, oldText, newText) -> {
+                    codeArea.setStyleSpans(0, LCSyntax.computeHighlighting(newText));
+                });
+                // Initial highlighting
+                codeArea.replaceText(content);
+                codeArea.setStyleSpans(0, LCSyntax.computeHighlighting(content));
+            } else {
+                codeArea.replaceText(content);
+            }
 
             // Listen for changes
             codeArea.textProperty().addListener((obs, oldVal, newVal) -> {
