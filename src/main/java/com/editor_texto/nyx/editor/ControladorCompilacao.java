@@ -2,7 +2,8 @@ package com.editor_texto.nyx.editor;
 
 import com.editor_texto.nyx.compiler.api.CompiladorLC;
 import com.editor_texto.nyx.compiler.api.ErroCompilacao;
-import com.editor_texto.nyx.compiler.api.GerenciadorJWASM;
+import com.editor_texto.nyx.compiler.api.ExecutorAssembler;
+import com.editor_texto.nyx.compiler.api.FabricaAssembler;
 import com.editor_texto.nyx.compiler.api.ResultadoAssembler;
 import com.editor_texto.nyx.compiler.api.ResultadoCompilacao;
 import com.editor_texto.nyx.compiler.api.TipoErro;
@@ -101,8 +102,9 @@ public class ControladorCompilacao {
 
                 ResultadoAssembler resAssembler = null;
                 // Se compilou com sucesso, roda o assembler .asm -> .obj
+                // Se compilou com sucesso, roda o assembler .asm -> .obj
                 if (resCompilacao.isSucesso()) {
-                    GerenciadorJWASM assembler = new GerenciadorJWASM();
+                    ExecutorAssembler assembler = FabricaAssembler.criarAssembler();
                     // O arquivo gerado está em resCompilacao.getArquivoAssemblyGerado()
                     resAssembler = assembler.montar(
                             resCompilacao.getArquivoAssemblyGerado(),

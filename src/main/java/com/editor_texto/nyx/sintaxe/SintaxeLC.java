@@ -27,6 +27,9 @@ public class SintaxeLC {
      *         RichTextFX.
      */
     public static StyleSpans<Collection<String>> calcularRealce(String texto) {
+        if (texto == null || texto.isEmpty()) {
+            return org.fxmisc.richtext.model.StyleSpans.singleton(Collections.emptyList(), 0);
+        }
         List<Token> tokens = analisador.analisar(texto);
         StyleSpansBuilder<Collection<String>> construtorSpans = new StyleSpansBuilder<>();
         int ultimaPosicao = 0;

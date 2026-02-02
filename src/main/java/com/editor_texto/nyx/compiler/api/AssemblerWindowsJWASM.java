@@ -1,7 +1,6 @@
 package com.editor_texto.nyx.compiler.api;
 
 import java.io.BufferedReader;
-
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,37 +10,30 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Classe responsável por gerenciar a chamada ao assembler externo (JWASM).
+ * Implementação do assembler JWASM para Windows.
+ * Verifica explicitamente se o SO é Windows antes de executar.
  */
-public class GerenciadorJWASM {
+public class AssemblerWindowsJWASM implements ExecutorAssembler {
 
     private final Path caminhoExecutavel;
 
-    /**
-     * Construtor padrão que espera encontrar o jwasm na pasta tools.
-     */
-    public GerenciadorJWASM() {
+    public AssemblerWindowsJWASM() {
         this(Paths.get("tools", "jwasm.exe").toAbsolutePath());
     }
 
-    /**
-     * Construtor com caminho explícito para o executável.
-     * 
-     * @param caminhoExecutavel Caminho para o jwasm.exe
-     */
-    public GerenciadorJWASM(Path caminhoExecutavel) {
+    public AssemblerWindowsJWASM(Path caminhoExecutavel) {
         this.caminhoExecutavel = caminhoExecutavel;
     }
 
-    /**
-     * Executa o assembler para o arquivo ASM fornecido.
-     * 
-     * @param arquivoAsm Caminho completo para o arquivo .asm fonte
-     * @param pastaSaida Caminho para a pasta onde os arquivos gerados (.obj, .exe)
-     *                   devem ficar
-     * @return ResultadoAssembler contendo logs e status
-     */
+    @Override
     public ResultadoAssembler montar(Path arquivoAsm, Path pastaSaida) {
+        // Validação de SO
+        if (!isWindows()) {
+            return new ResultadoAssembler(false, Collections.emptyList(),
+                    List.of("ERRO: O pipeline de compilação atual suporta apenas Windows."), -1);
+        }
+
+        // Validação do Executável
         if (!validarExecutavel()) {
             return new ResultadoAssembler(false, Collections.emptyList(),
                     List.of("ERRO: Executável do JWASM não encontrado ou inválido em: " + caminhoExecutavel), -1);
@@ -55,9 +47,6 @@ public class GerenciadorJWASM {
             List<String> comando = montarComando(arquivoAsm, pastaSaida);
 
             ProcessBuilder pb = new ProcessBuilder(comando);
-
-            // Define diretório de trabalho como a pasta de saída para evitar sujeira,
-            // embora paths absolutos no comando resolvam.
             pb.directory(pastaSaida.toFile());
 
             Process processo = pb.start();
@@ -82,6 +71,11 @@ public class GerenciadorJWASM {
         }
 
         return new ResultadoAssembler(exitCode == 0, stdout, stderr, exitCode);
+    }
+
+    private boolean isWindows() {
+        String os = System.getProperty("os.name").toLowerCase();
+        return os.contains("win");
     }
 
     private boolean validarExecutavel() {
