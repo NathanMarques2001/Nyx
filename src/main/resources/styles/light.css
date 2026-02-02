@@ -81,3 +81,9 @@
     -fx-font-family: monospace;
     -fx-padding: 0 5 0 5;
 }
+
+.styled-text-area .erro-compilacao {
+    /* Red underline effect using gradient */
+    -fx-background-color: linear-gradient(to bottom, transparent 90%, red 90%);
+    -fx-underline: false;
+}

@@ -129,3 +129,39 @@
 .scroll-bar:vertical .thumb {
     -fx-background-color: #555555;
 }
+
+.styled-text-area .erro-compilacao {
+    /* Red underline effect using gradient */
+    -fx-background-color: linear-gradient(to bottom, transparent 90%, #ff4444 90%);
+    -fx-underline: false;
+}
+
+/* Fix for TableView selection background in Dark Mode */
+.table-view {
+    -fx-background-color: #2b2b2b;
+    -fx-selection-bar-non-focused: #4c4c4c;
+    /* Fix: prevents white background when losing focus */
+    -fx-selection-bar: #4c4c4c;
+}
+
+.table-row-cell {
+    -fx-text-fill: #e0e0e0;
+}
+
+.table-row-cell:filled:selected,
+.table-row-cell:filled:selected:focused {
+    -fx-background-color: #4c4c4c;
+    -fx-text-fill: white;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #3c3c3c;
+}
+
+.table-view .column-header {
+    -fx-background-color: #3c3c3c;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #e0e0e0;
+}

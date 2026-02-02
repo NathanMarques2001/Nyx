@@ -21,6 +21,7 @@ public class LayoutPrincipal {
 
     private BorderPane painelPrincipal;
     private PainelEditor painelEditor;
+    private com.editor_texto.nyx.ui.components.PipelineCompilacao pipelineCompilacao;
 
     public LayoutPrincipal() {
         // Inicializa o layout
@@ -38,11 +39,37 @@ public class LayoutPrincipal {
         painelEditor = new PainelEditor();
         painelPrincipal.setCenter(painelEditor.obterPainelDeAbas());
 
-        // Adiciona o console
+        // Pipeline Compilação
+        pipelineCompilacao = new com.editor_texto.nyx.ui.components.PipelineCompilacao();
+
+        // Adiciona a area inferior (Console + Erros)
+        javafx.scene.control.TabPane painelInferior = new javafx.scene.control.TabPane();
+
+        // Tab Console
         PainelConsole painelConsole = new PainelConsole();
-        painelPrincipal.setBottom(painelConsole.obterConsole());
+        javafx.scene.control.Tab tabConsole = new javafx.scene.control.Tab("Console", painelConsole.obterConsole());
+        tabConsole.setClosable(false);
+
+        // Tab Erros
+        PainelErros painelErros = new PainelErros();
+        javafx.scene.control.Tab tabErros = new javafx.scene.control.Tab("Erros", painelErros.obterPainel());
+        tabErros.setClosable(false);
+
+        painelInferior.getTabs().addAll(tabConsole, tabErros);
+        painelInferior.setPrefHeight(200);
+
+        // Container inferior (Pipeline + Tabs)
+        javafx.scene.layout.VBox containerInferior = new javafx.scene.layout.VBox();
+        containerInferior.getChildren().addAll(pipelineCompilacao, painelInferior);
+
+        painelPrincipal.setBottom(containerInferior);
 
         // --- LÓGICA DE EVENTOS ---
+
+        // Configura navegação do painel de erros
+        painelErros.definirAcaoNavegacao(erro -> {
+            painelEditor.navegarParaErro(erro.getLinha(), erro.getColuna());
+        });
 
         // Ouvinte para abrir arquivos via Árvore
         painelArvoreArquivos.obterArvore().getSelectionModel().selectedItemProperty()
@@ -160,11 +187,17 @@ public class LayoutPrincipal {
 
         // --- CONTROLADORES EXTRAS ---
         // Controlador de Compilação
-        ControladorCompilacao controladorCompilacao = new ControladorCompilacao(painelEditor, painelConsole);
+        ControladorCompilacao controladorCompilacao = new ControladorCompilacao(painelEditor, painelConsole,
+                painelErros, pipelineCompilacao);
 
         // Menu Executar > Executar
         barraDeMenu.obterItemExecutar().setAccelerator(javafx.scene.input.KeyCombination.keyCombination("F5"));
-        barraDeMenu.obterItemExecutar().setOnAction(e -> controladorCompilacao.aoCompilar());
+        barraDeMenu.obterItemExecutar().setOnAction(e -> {
+            // Seleciona aba de console ou erros dependendo do resultado (será tratado no
+            // controller)
+            // mas aqui chamamos a ação
+            controladorCompilacao.aoCompilar();
+        });
     }
 
     public BorderPane obterPainelPrincipal() {
