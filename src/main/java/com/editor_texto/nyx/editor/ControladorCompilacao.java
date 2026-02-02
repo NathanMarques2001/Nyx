@@ -2,6 +2,8 @@ package com.editor_texto.nyx.editor;
 
 import com.editor_texto.nyx.compiler.api.CompiladorLC;
 import com.editor_texto.nyx.compiler.api.ErroCompilacao;
+import com.editor_texto.nyx.compiler.api.GerenciadorJWASM;
+import com.editor_texto.nyx.compiler.api.ResultadoAssembler;
 import com.editor_texto.nyx.compiler.api.ResultadoCompilacao;
 import com.editor_texto.nyx.compiler.api.TipoErro;
 import com.editor_texto.nyx.ui.components.PipelineCompilacao;
@@ -90,19 +92,29 @@ public class ControladorCompilacao {
         }
 
         // --- Execução em Background ---
-        Task<ResultadoCompilacao> tarefaCompilacao = new Task<>() {
+        Task<ResultadoProcesso> tarefaCompilacao = new Task<>() {
             @Override
-            protected ResultadoCompilacao call() throws Exception {
+            protected ResultadoProcesso call() throws Exception {
                 CompiladorLC compilador = new CompiladorLC();
-                // Simula um pequeno delay para que o usuário perceba "Executando"
-                // para fases muito rápidas, se desejar. Mas vamos deixar rapido por enquanto.
-                // Thread.sleep(500);
-                return compilador.compilar(codigoFonte, diretorioSaidaFinal);
+                // Compila .lc -> .asm
+                ResultadoCompilacao resCompilacao = compilador.compilar(codigoFonte, diretorioSaidaFinal);
+
+                ResultadoAssembler resAssembler = null;
+                // Se compilou com sucesso, roda o assembler .asm -> .obj
+                if (resCompilacao.isSucesso()) {
+                    GerenciadorJWASM assembler = new GerenciadorJWASM();
+                    // O arquivo gerado está em resCompilacao.getArquivoAssemblyGerado()
+                    resAssembler = assembler.montar(
+                            resCompilacao.getArquivoAssemblyGerado(),
+                            diretorioSaidaFinal);
+                }
+
+                return new ResultadoProcesso(resCompilacao, resAssembler);
             }
         };
 
         tarefaCompilacao.setOnSucceeded(e -> {
-            ResultadoCompilacao resultado = tarefaCompilacao.getValue();
+            ResultadoProcesso resultado = tarefaCompilacao.getValue();
             processarResultado(resultado);
         });
 
@@ -111,15 +123,15 @@ public class ControladorCompilacao {
             ex.printStackTrace();
             if (painelConsole != null && painelConsole.obterConsole() != null) {
                 painelConsole.obterConsole()
-                        .appendText("[FALHA] Erro interno no compilador: " + ex.getMessage() + "\n");
+                        .appendText("[FALHA] Erro interno ou exceção: " + ex.getMessage() + "\n");
             }
             if (pipelineCompilacao != null) {
-                // Se falhou com exceção, marca erro na fase atual (Léxica é o chute inicial)
+                // Marca erro genérico na primeira fase se explodiu antes
                 pipelineCompilacao.marcarErro(Fase.LEXICA);
             }
             Alert alerta = new Alert(Alert.AlertType.ERROR);
             alerta.setTitle("Erro Interno");
-            alerta.setHeaderText("Falha ao invocar compilador");
+            alerta.setHeaderText("Falha na execução");
             alerta.setContentText(ex.getMessage());
             alerta.showAndWait();
         });
@@ -127,14 +139,25 @@ public class ControladorCompilacao {
         new Thread(tarefaCompilacao).start();
     }
 
-    private void processarResultado(ResultadoCompilacao resultado) {
+    private void processarResultado(ResultadoProcesso wrapper) {
+        ResultadoCompilacao resultado = wrapper.compilacao;
+        ResultadoAssembler assembler = wrapper.assembler;
+
         if (resultado.isSucesso()) {
-            // Sucesso TOTAL
+            // Sucesso na Compilação (LC -> ASM)
+
+            // Verifica sucesso do Assembler (ASM -> OBJ)
+            boolean assemblerSucesso = (assembler != null && assembler.isSucesso());
+
             if (pipelineCompilacao != null) {
                 pipelineCompilacao.marcarSucesso(Fase.LEXICA);
                 pipelineCompilacao.marcarSucesso(Fase.SINTATICA);
                 pipelineCompilacao.marcarSucesso(Fase.SEMANTICA);
-                pipelineCompilacao.marcarSucesso(Fase.GERACAO);
+                if (assemblerSucesso) {
+                    pipelineCompilacao.marcarSucesso(Fase.GERACAO);
+                } else {
+                    pipelineCompilacao.marcarErro(Fase.GERACAO);
+                }
             }
 
             String mensagem = "Compilação concluída! " + resultado.getArquivoAssemblyGerado().toString();
@@ -143,9 +166,25 @@ public class ControladorCompilacao {
                 for (String aviso : resultado.getAvisos()) {
                     painelConsole.obterConsole().appendText("[AVISO] " + aviso + "\n");
                 }
+
+                // Logs do Assembler
+                if (assembler != null) {
+                    painelConsole.obterConsole().appendText("\n--- Execução JWASM ---\n");
+                    for (String line : assembler.getStdout()) {
+                        painelConsole.obterConsole().appendText(line + "\n");
+                    }
+                    for (String line : assembler.getStderr()) {
+                        painelConsole.obterConsole().appendText("[JWASM ERRO] " + line + "\n");
+                    }
+                    if (assembler.isSucesso()) {
+                        painelConsole.obterConsole().appendText("[SUCESSO] Montagem finalizada.\n");
+                    } else {
+                        painelConsole.obterConsole().appendText("[FALHA] Erro na montagem do arquivo objeto.\n");
+                    }
+                }
             }
         } else {
-            // Houve erros. Precisamos identificar onde parou.
+            // Houve erros na compilação LC
             List<ErroCompilacao> erros = resultado.getErros();
 
             boolean erroLexico = false;
@@ -208,6 +247,17 @@ public class ControladorCompilacao {
 
         if (painelConsole != null && painelConsole.obterConsole() != null) {
             painelConsole.obterConsole().appendText("--------------------------------------------------\n");
+        }
+    }
+
+    // Classe interna para transportar os dois resultados
+    private static class ResultadoProcesso {
+        public final ResultadoCompilacao compilacao;
+        public final ResultadoAssembler assembler;
+
+        public ResultadoProcesso(ResultadoCompilacao compilacao, ResultadoAssembler assembler) {
+            this.compilacao = compilacao;
+            this.assembler = assembler;
         }
     }
 }
