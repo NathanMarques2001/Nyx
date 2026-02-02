@@ -29,18 +29,52 @@
 }
 
 /* Syntax Highlighting */
-.keyword {
-    -fx-fill: purple;
+.token-keyword {
+    -fx-fill: #000080;
+    /* Navy Blue */
     -fx-font-weight: bold;
 }
 
-.string {
-    -fx-fill: green;
+.token-type {
+    -fx-fill: #000080;
+    -fx-font-weight: bold;
 }
 
-.comment {
-    -fx-fill: gray;
+.token-string {
+    -fx-fill: #008000;
+    /* Green */
+}
+
+.token-comment {
+    -fx-fill: #808080;
     -fx-font-style: italic;
+}
+
+.token-number {
+    -fx-fill: #0000FF;
+    /* Blue */
+}
+
+.token-hex {
+    -fx-fill: #008000;
+}
+
+.token-boolean {
+    -fx-fill: #000080;
+    -fx-font-weight: bold;
+}
+
+.token-operator {
+    -fx-fill: black;
+}
+
+.token-delimiter {
+    -fx-fill: black;
+}
+
+.token-error {
+    -fx-fill: red;
+    -fx-underline: true;
 }
 
 .lineno {

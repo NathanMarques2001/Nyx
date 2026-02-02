@@ -63,27 +63,61 @@
 }
 
 /* Syntax Highlighting - Increased specificity to ensure override over .styled-text-area .text */
-.styled-text-area .keyword {
+.styled-text-area .token-keyword {
     -fx-fill: #ffa726;
-    /* Orange/Gold for tags */
+    /* Orange/Gold */
     -fx-font-weight: bold;
 }
 
-.styled-text-area .string {
-    -fx-fill: #66bb6a;
-    /* Green for text letters */
+.styled-text-area .token-type {
+    -fx-fill: #9876aa;
+    /* Purple */
+    -fx-font-weight: bold;
 }
 
-.styled-text-area .comment {
+.styled-text-area .token-string {
+    -fx-fill: #6a8759;
+    /* Green */
+}
+
+.styled-text-area .token-comment {
     -fx-fill: #808080;
     -fx-font-style: italic;
 }
 
-.styled-text-area .paren,
-.styled-text-area .brace,
-.styled-text-area .bracket,
-.styled-text-area .semicolon {
-    -fx-fill: #a0a0a0;
+.styled-text-area .token-number {
+    -fx-fill: #6897bb;
+    /* Blue-ish */
+}
+
+.styled-text-area .token-hex {
+    -fx-fill: #a5c261;
+    /* Green-ish */
+}
+
+.styled-text-area .token-boolean {
+    -fx-fill: #cc7832;
+    /* Orange - same as keyword or slightly different */
+    -fx-font-weight: bold;
+}
+
+.styled-text-area .token-operator {
+    -fx-fill: #e8e8e8;
+    /* White-ish */
+}
+
+.styled-text-area .token-delimiter {
+    -fx-fill: #cc7832;
+    /* Orange specific to delimiters or just plain */
+}
+
+.styled-text-area .token-error {
+    -fx-fill: #ff0000;
+    -fx-underline: true;
+}
+
+.styled-text-area .token-default {
+    -fx-fill: #dcdcdc;
 }
 
 .scroll-bar:horizontal,
