@@ -82,21 +82,50 @@ public class ControladorCompilacao {
         try {
             CompiladorLC compilador = new CompiladorLC();
             System.out.println("DEBUG: Chamando compilador...");
-            String mensagem = compilador.compilar(codigoFonte, diretorioSaida.toAbsolutePath().toString(), nomeArquivo);
-            System.out.println("DEBUG: Compilação retornou: " + mensagem);
 
-            if (painelConsole != null && painelConsole.obterConsole() != null) {
-                painelConsole.obterConsole().appendText("[SUCESSO] " + mensagem + "\n");
+            com.editor_texto.nyx.compiler.api.ResultadoCompilacao resultado = compilador.compilar(codigoFonte,
+                    diretorioSaida);
+
+            if (resultado.isSucesso()) {
+                String mensagem = "Compilação concluída! " + resultado.getArquivoAssemblyGerado().toString();
+                System.out.println("DEBUG: Sucesso: " + mensagem);
+
+                if (painelConsole != null && painelConsole.obterConsole() != null) {
+                    painelConsole.obterConsole().appendText("[SUCESSO] " + mensagem + "\n");
+                    for (String aviso : resultado.getAvisos()) {
+                        painelConsole.obterConsole().appendText("[AVISO] " + aviso + "\n");
+                    }
+                }
+
+                Alert alerta = new Alert(Alert.AlertType.INFORMATION);
+                alerta.setTitle("Sucesso");
+                alerta.setHeaderText("Compilação Concluída");
+                alerta.setContentText(mensagem);
+                alerta.show();
+            } else {
+                if (painelConsole != null && painelConsole.obterConsole() != null) {
+                    painelConsole.obterConsole().appendText("[FALHA] Erros de compilação:\n");
+                    for (com.editor_texto.nyx.compiler.api.ErroCompilacao erro : resultado.getErros()) {
+                        painelConsole.obterConsole().appendText(erro.toString() + "\n");
+                    }
+                }
+
+                StringBuilder sb = new StringBuilder();
+                for (com.editor_texto.nyx.compiler.api.ErroCompilacao erro : resultado.getErros()) {
+                    sb.append(erro.toString()).append("\n");
+                }
+
+                Alert alerta = new Alert(Alert.AlertType.ERROR);
+                alerta.setTitle("Erro de Compilação");
+                alerta.setHeaderText("Falha ao compilar");
+                alerta.setContentText(sb.toString());
+                alerta.showAndWait();
             }
 
-            Alert alerta = new Alert(Alert.AlertType.INFORMATION);
-            alerta.setTitle("Sucesso");
-            alerta.setHeaderText("Compilação Concluída");
-            alerta.setContentText(mensagem);
-            alerta.show();
+        } catch (
 
-        } catch (Exception e) {
-            System.err.println("DEBUG: Exceção durante compilação:");
+        Exception e) {
+            System.err.println("DEBUG: Exceção inesperada durante compilação:");
             e.printStackTrace();
 
             if (painelConsole != null && painelConsole.obterConsole() != null) {
